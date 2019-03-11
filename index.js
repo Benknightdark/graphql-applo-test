@@ -1,3 +1,5 @@
+
+
 const {
     getAllUsers,
     getAllPosts,
@@ -20,14 +22,17 @@ const {
 } = require("apollo-server");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const { DateTime } = require('@okgrow/graphql-scalars');
 require('dotenv').config()
+
 
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS)
 const SECRET = process.env.SECRET
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
+
+scalar DateTime
     """
     貼文
     """
@@ -77,6 +82,10 @@ const typeDefs = gql`
       posts: [Post]
       "依照 id 取得特定貼文"
       post(id: ID!): Post
+     "獲取現在時間"
+        now: DateTime
+        "詢問日期是否為週五... TGIF!!"
+        isFriday(date: DateTime!): Boolean
     }
   
     input UpdateMyInfoInput {
@@ -131,6 +140,7 @@ const isPostAuthor = resolverFunc => (parent, args, context) => {
 
 // Resolvers
 const resolvers = {
+    DateTime,
     Query: {
         hello: () => "world",
         me: isAuthenticated((root, args, { me, userModel }) =>
@@ -140,7 +150,9 @@ const resolvers = {
         user: (root, { name }, { userModel }) => userModel.findUserByName(name),
         posts: (root, args, { postModel }) => postModel.getAllPosts(),
         post: (root, { id }, { postModel }) =>
-            postModel.findPostByPostId(Number(id))
+            postModel.findPostByPostId(Number(id)),
+            now: () => new Date(),
+    isFriday: (root, { date }) => date.getDay() === 5
     },
     User: {
         posts: (parent, args, { postModel }) =>
